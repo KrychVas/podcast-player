@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nav-home')?.addEventListener('click', () => navigateTo('home'));
   document.getElementById('nav-playlist')?.addEventListener('click', () => navigateTo('playlist'));
 
-  // Стартуємо з головної сторінки
-  navigateTo('home');
+  // Стартуємо додаток з того URL, який ЗАРАЗ є в адресному рядку браузера
+  const currentPath = window.location.pathname.substring(1);
+  navigateTo(currentPath || 'home');
 });
