@@ -1,0 +1,20 @@
+{
+  "podcasts": [
+    {
+      "id": "mock-podcast-1",
+      "title": "Frontend Space Journey (Mock Data)",
+      "publisher": "RS School Radio",
+      "image": "https://production.listennotes.com/podcasts/tony-evans-sermons-audio-dr-tony-evans-nS3p8C6EwXF-14f3f344d06.1400x1400.jpg",
+      "description": "Your ultimate guide through the universe of TypeScript, JavaScript, and SPA routing."
+    },
+    {
+      "id": "mock-podcast-2",
+      "title": "The Rolling Scopes Podcast (Mock Data)",
+      "publisher": "Community Developers",
+      "image": "https://production.listennotes.com/podcasts/wsj-tech-news-briefing-the-wall-street-journal-6N026_Mv86R.1400x1400.jpg",
+      "description": "A podcast about web development, open-source projects, and tips for junior developers."
+    }
+  ],
+  "has_next": false,
+  "page_number": 1
+}

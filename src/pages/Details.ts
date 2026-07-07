@@ -1,7 +1,9 @@
+// src/pages/Details.ts
 import { fetchPodcastDetails } from '../api/podcastApi';
 import { navigateTo } from '../router/router';
+// Абсолютно правильний імпорт з папки utils
+import { playEpisode } from '../utils/player'; 
 
-// Стан для накопичення епізодів при пагінації всередині сторінки деталей
 let currentEpisodes: any[] = [];
 let nextPubDate: number | null = null;
 
@@ -9,11 +11,11 @@ export async function renderDetails(id: string) {
   const appDiv = document.querySelector<HTMLDivElement>('#app');
   if (!appDiv) return;
 
-  // Скидаємо стан епізодів для нового подкасту
+  // Скидаємо стан перед новим завантаженням
   currentEpisodes = [];
   nextPubDate = null;
 
-  // 1. Показуємо індикатор завантаження епізодів
+  // 1. Індикатор завантаження епізодів
   appDiv.innerHTML = `
     <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif;">
       <button id="back-btn" style="background: #2a2a2a; color: #fff; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
@@ -25,7 +27,7 @@ export async function renderDetails(id: string) {
 
   document.getElementById('back-btn')?.addEventListener('click', () => navigateTo('home'));
 
-  // 2. Отримуємо дані з API
+  // 2. Отримуємо дані про подкаст
   const data = await fetchPodcastDetails(id);
 
   if (!data) {
@@ -39,11 +41,10 @@ export async function renderDetails(id: string) {
     return;
   }
 
-  // Зберігаємо першу пачку епізодів та дату наступної сторінки
   currentEpisodes = data.episodes || [];
   nextPubDate = data.next_episode_pub_date || null;
 
-  // 3. Рендеримо структуру сторінки
+  // 3. Шаблон сторінки деталей
   appDiv.innerHTML = `
     <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; padding-bottom: 140px;">
       <button id="back-to-home" style="background: #2a2a2a; color: #fff; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
@@ -64,7 +65,6 @@ export async function renderDetails(id: string) {
       </h3>
 
       <div id="episodes-list" style="display: flex; flex-direction: column; gap: 15px;"></div>
-
       <div id="episodes-pagination" style="text-align: center; margin-top: 30px;"></div>
     </div>
   `;
@@ -74,7 +74,7 @@ export async function renderDetails(id: string) {
   const episodesListContainer = document.getElementById('episodes-list');
   const paginationContainer = document.getElementById('episodes-pagination');
 
-  // Функція для відрендерення поточного списку епізодів та прив'язки плеєра
+  // Функція рендеру списку треків
   function renderEpisodesMarkup() {
     if (!episodesListContainer) return;
 
@@ -95,11 +95,10 @@ export async function renderDetails(id: string) {
       </div>
     `).join('');
 
-    // Прив'язуємо події до кнопок плеєра
     attachPlayerEvents();
   }
 
-  // Функція для керування кнопкою "Load More Episodes"
+  // Кнопка пагінації епізодів
   function updatePaginationButton() {
     if (!paginationContainer) return;
 
@@ -126,32 +125,22 @@ export async function renderDetails(id: string) {
     });
   }
 
-  // Логіка запуску глобального аудіоплеєра
+// Зв'язуємо кнопки з глобальною утилітою плеєра
   function attachPlayerEvents() {
+    // Додаємо знак "!", щоб прибрати помилку 'appDiv' is possibly 'null'
     const playButtons = appDiv!.querySelectorAll('.play-episode-btn');
     playButtons.forEach(button => {
       button.addEventListener('click', () => {
         const audioUrl = button.getAttribute('data-audio');
         const episodeTitle = button.getAttribute('data-title');
-        const playerFooter = document.getElementById('global-player');
 
-        if (audioUrl && episodeTitle && playerFooter) {
-          playerFooter.innerHTML = `
-            <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; font-family: sans-serif; text-align: left;">
-              <div style="font-size: 0.9rem; color: #fff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                🎵 Now Playing: <span style="color: #646cff;">${episodeTitle}</span>
-              </div>
-              <audio id="audio-element" src="${audioUrl}" controls autoplay style="width: 100%; height: 40px; outline: none;"></audio>
-            </div>
-          `;
-          const audio = document.getElementById('audio-element') as HTMLAudioElement;
-          audio?.play().catch(err => console.log("Playback error:", err));
+        if (audioUrl && episodeTitle) {
+          playEpisode(audioUrl, episodeTitle);
         }
       });
     });
   }
 
-  // Первинний рендер епізодів та кнопки пагінації
   renderEpisodesMarkup();
   updatePaginationButton();
 }

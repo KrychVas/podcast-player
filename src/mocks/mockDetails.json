@@ -1,0 +1,23 @@
+{
+  "id": "mock-podcast-1",
+  "title": "Frontend Space Journey (Mock Data)",
+  "publisher": "RS School Radio",
+  "image": "https://production.listennotes.com/podcasts/tony-evans-sermons-audio-dr-tony-evans-nS3p8C6EwXF-14f3f344d06.1400x1400.jpg",
+  "description": "Your ultimate guide through the universe of TypeScript, JavaScript, and SPA routing.",
+  "total_episodes": 2,
+  "next_episode_pub_date": null,
+  "episodes": [
+    {
+      "id": "mock-ep-1",
+      "title": "Episode 1: The Magic of Single Page Applications (SPA)",
+      "pub_date_ms": 1783440000000,
+      "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    {
+      "id": "mock-ep-2",
+      "title": "Episode 2: Master-Detail Views and Route Parameters",
+      "pub_date_ms": 1783353600000,
+      "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    }
+  ]
+}

@@ -1,11 +1,10 @@
-// Функція для ініціалізації або оновлення плеєра у футері
 export function playEpisode(audioUrl: string, episodeTitle: string) {
   const playerFooter = document.getElementById('global-player');
   if (!playerFooter) return;
 
-  // Оновлюємо вміст футера: додаємо назву епізоду та тег <audio> з контролами
+  // Рендеримо плеєр всередині фіксованого футера
   playerFooter.innerHTML = `
-    <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; font-family: sans-serif; text-align: left;">
+    <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; font-family: sans-serif; text-align: left; padding: 0 10px;">
       <div style="font-size: 0.9rem; color: #fff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
         🎵 Now Playing: <span style="color: #646cff;">${episodeTitle}</span>
       </div>
@@ -13,7 +12,17 @@ export function playEpisode(audioUrl: string, episodeTitle: string) {
     </div>
   `;
 
-  // Автоматично запускаємо аудіо (autoplay іноді блокується браузерами до першого кліку, але ми вже клікнули на "Play")
   const audio = document.getElementById('audio-element') as HTMLAudioElement;
-  audio?.play().catch(err => console.log("Autoplay blocked or interrupted:", err));
+  
+  if (audio) {
+    // Зберігаємо результат у змінну типу any, щоб обдурити суворий TypeScript
+    const playPromise = audio.play() as any;
+    
+    // Перевіряємо, чи повернувся Promise (захист від старих стандартів)
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch((err: any) => {
+        console.log("Autoplay prevented or playback error:", err);
+      });
+    }
+  }
 }
