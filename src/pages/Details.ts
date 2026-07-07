@@ -1,4 +1,3 @@
-// src/pages/Details.ts
 import { fetchPodcastDetails } from '../api/podcastApi';
 import { navigateTo } from '../router/router';
 
@@ -16,7 +15,7 @@ export async function renderDetails(id: string) {
     </div>
   `;
 
-  // Кнопка повернення на головну
+  // Кнопка повернення на головну під час завантаження
   document.getElementById('back-btn')?.addEventListener('click', () => navigateTo('home'));
 
   // 2. Отримуємо дані про подкаст та його епізоди з API
@@ -33,9 +32,9 @@ export async function renderDetails(id: string) {
     return;
   }
 
-  // 3. Рендеримо детальну інформацію та список епізодів (Вимога ТЗ: Назва, автор, опис, список епізодів -> +10 балів)
+  // 3. Рендеримо детальну інформацію та список епізодів
   appDiv.innerHTML = `
-    <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; padding-bottom: 100px;">
+    <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif; padding-bottom: 120px;">
       <button id="back-to-home" style="background: #2a2a2a; color: #fff; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
         ⬅ Back to Home
       </button>
@@ -76,4 +75,30 @@ export async function renderDetails(id: string) {
 
   // Навігація назад
   document.getElementById('back-to-home')?.addEventListener('click', () => navigateTo('home'));
+
+  // 🎵 ОЖИВЛЯЄМО ПЛЕЄР: Знаходимо всі кнопки "Play" і вішаємо подію кліку
+  const playButtons = appDiv.querySelectorAll('.play-episode-btn');
+  playButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const audioUrl = button.getAttribute('data-audio');
+      const episodeTitle = button.getAttribute('data-title');
+      const playerFooter = document.getElementById('global-player');
+
+      if (audioUrl && episodeTitle && playerFooter) {
+        // Оновлюємо футер: вставляємо назву треку та справжній тег <audio>
+        playerFooter.innerHTML = `
+          <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; font-family: sans-serif; text-align: left;">
+            <div style="font-size: 0.9rem; color: #fff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              🎵 Now Playing: <span style="color: #646cff;">${episodeTitle}</span>
+            </div>
+            <audio id="audio-element" src="${audioUrl}" controls autoplay style="width: 100%; height: 40px; outline: none;"></audio>
+          </div>
+        `;
+
+        // Запускаємо відтворення
+        const audio = document.getElementById('audio-element') as HTMLAudioElement;
+        audio?.play().catch(err => console.log("Playback interaction error:", err));
+      }
+    });
+  });
 }
