@@ -18,6 +18,24 @@
       "title": "Episode 2: Master-Detail Views and Route Parameters",
       "pub_date_ms": 1783353600000,
       "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+    },
+    {
+      "id": "mock-ep-3",
+      "title": "Episode 3: Understanding LocalStorage and App State",
+      "pub_date_ms": 1783267200000,
+      "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+    },
+    {
+      "id": "mock-ep-4",
+      "title": "Episode 4: Clean Architecture & CSS-in-JS",
+      "pub_date_ms": 1783180800000,
+      "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+    },
+    {
+      "id": "mock-ep-5",
+      "title": "Episode 5: The Final Review & Interview Questions",
+      "pub_date_ms": 1783094400000,
+      "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
     }
   ]
 }

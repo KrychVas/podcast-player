@@ -15,8 +15,12 @@ const USE_MOCK_MODE = true;
 // 1. Отримання найкращих подкастів
 export async function fetchBestPodcasts(page: number = 1) {
   if (USE_MOCK_MODE) {
-    console.log('[Mock API] fetchBestPodcasts викликано');
-    return mockBestPodcasts;
+    console.log(`[Mock API] fetchBestPodcasts викликано для сторінки ${page}`);
+    // Правильно дістаємо сторінки з оновленої структури JSON
+    if (page === 2) {
+      return mockBestPodcasts.page_2;
+    }
+    return mockBestPodcasts.page_1;
   }
 
   try {
@@ -34,16 +38,20 @@ export async function fetchBestPodcasts(page: number = 1) {
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch best podcasts:', error);
-    return mockBestPodcasts; // Якщо навіть у живому режимі щось впаде — підстраховка моками
+    return mockBestPodcasts.page_1; // Безпечний відкат на першу сторінку моків
   }
 }
 
 // 2. Пошук подкастів
 export async function searchPodcasts(query: string, offset: number = 0) {
   if (USE_MOCK_MODE) {
-    console.log('[Mock API] searchPodcasts викликано');
+    console.log(`[Mock API] searchPodcasts викликано з запитом "${query}"`);
     const queryLower = query.toLowerCase();
-    const filtered = mockBestPodcasts.podcasts.filter(p =>
+    
+    // Об'єднуємо подкасти з обох сторінок моків, щоб пошук працював по всьому списку
+    const allMocks = [...mockBestPodcasts.page_1.podcasts, ...mockBestPodcasts.page_2.podcasts];
+    
+    const filtered = allMocks.filter(p =>
       p.title.toLowerCase().includes(queryLower) || p.publisher.toLowerCase().includes(queryLower)
     );
     return { podcasts: filtered, has_next: false, page_number: 1 };
@@ -64,14 +72,14 @@ export async function searchPodcasts(query: string, offset: number = 0) {
     return await response.json();
   } catch (error) {
     console.error('Failed to search podcasts:', error);
-    return { podcasts: mockBestPodcasts.podcasts, has_next: false, page_number: 1 };
+    return { podcasts: mockBestPodcasts.page_1.podcasts, has_next: false, page_number: 1 };
   }
 }
 
 // 3. Деталі подкасту
 export async function fetchPodcastDetails(id: string, nextPubDate: number | null = null) {
   if (USE_MOCK_MODE) {
-    console.log('[Mock API] fetchPodcastDetails викликано');
+    console.log(`[Mock API] fetchPodcastDetails викликано для ID: ${id}`);
     return mockDetails;
   }
 
