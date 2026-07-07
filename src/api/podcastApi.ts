@@ -49,9 +49,14 @@ export async function searchPodcasts(query: string, offset: number = 0) {
 }
 
 // 3. Деталі подкасту для другого розділу таски
-export async function fetchPodcastDetails(id: string) {
+export async function fetchPodcastDetails(id: string, nextPubDate: number | null = null) {
   try {
-    const response = await fetch(`${BASE_URL}/podcasts/${id}`, {
+    let url = `${BASE_URL}/podcasts/${id}`;
+    if (nextPubDate) {
+      url += `?next_episode_pub_date=${nextPubDate}`;
+    }
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
