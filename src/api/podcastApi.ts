@@ -1,104 +1,105 @@
-// src/api/podcastApi.ts
-import mockBestPodcasts from '../mocks/mockBestPodcasts.json';
-import mockDetails from '../mocks/mockDetails.json';
+// Флаг для перемикання між тестовим та реальним API
+// true — безкоштовний тестовий сервер (без лімітів, не потрібен ключ)
+// false — реальний сервер (потрібен свіжий ключ в .env.local)
+const USE_TEST_API = true;
 
-const BASE_URL = 'https://listen-api.listennotes.com/api/v2';
+// Базові URL для обох режимів
+const BASE_URL = USE_TEST_API
+  ? 'https://listen-api-test.listennotes.com/api/v2'
+  : 'https://listen-api.listennotes.com/api/v2';
 
-// Безпечно дістаємо ключ із середовища Vite
+/**
+ * Отримує API-ключ із безпечного сховища Vite (.env.local)
+ */
 const getApiKey = (): string => import.meta.env.VITE_LISTEN_API_KEY || '';
 
-// 🔁 РЕЖИМ РОЗРОБКИ (ПЕРЕМИКАЧ):
-// true  — додаток завжди бере локальні мок-дані (для розробки зараз з простроченим ключем)
-// false — додаток робить реальні живі запити в інтернет (для фінальної здачі)
-const USE_MOCK_MODE = true; 
+/**
+ * Отримує тестовий ID підкасту із безпечного сховища Vite (.env.local)
+ * Якщо змінна не задана, використовує дефолтний офіційний ID для мок-сервера
+ */
+const getTestPodcastId = (): string => import.meta.env.VITE_TEST_PODCAST_ID || '4d3fe71774164962b854f6ae184de262';
 
-// 1. Отримання найкращих подкастів
-export async function fetchBestPodcasts(page: number = 1) {
-  if (USE_MOCK_MODE) {
-    console.log(`[Mock API] fetchBestPodcasts викликано для сторінки ${page}`);
-    // Правильно дістаємо сторінки з оновленої структури JSON
-    if (page === 2) {
-      return mockBestPodcasts.page_2;
-    }
-    return mockBestPodcasts.page_1;
+/**
+ * Формує заголовки для HTTP-запитів залежно від обраного режиму
+ */
+const getHeaders = (): HeadersInit => {
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+  };
+
+  // Якщо ми НЕ на тестовому сервері, обов'язково додаємо секретний ключ
+  if (!USE_TEST_API) {
+    headers['X-ListenAPI-Key'] = getApiKey();
   }
 
+  return headers;
+};
+
+// =========================================================================
+// ЕНДПОІНТИ API
+// =========================================================================
+
+/**
+ * 1. Отримання списку найкращих підкастів (Головна сторінка)
+ */
+export async function fetchBestPodcasts(page: number = 1) {
   try {
-    const response = await fetch(
-      `${BASE_URL}/best_podcasts?sort=recent_published_first&page=${page}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'X-ListenAPI-Key': getApiKey(),
-        },
-      }
-    );
+    const response = await fetch(`${BASE_URL}/best_podcasts?page=${page}`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch best podcasts:', error);
-    return mockBestPodcasts.page_1; // Безпечний відкат на першу сторінку моків
+    throw error;
   }
 }
 
-// 2. Пошук подкастів
-export async function searchPodcasts(query: string, offset: number = 0) {
-  if (USE_MOCK_MODE) {
-    console.log(`[Mock API] searchPodcasts викликано з запитом "${query}"`);
-    const queryLower = query.toLowerCase();
-    
-    // Об'єднуємо подкасти з обох сторінок моків, щоб пошук працював по всьому списку
-    const allMocks = [...mockBestPodcasts.page_1.podcasts, ...mockBestPodcasts.page_2.podcasts];
-    
-    const filtered = allMocks.filter(p =>
-      p.title.toLowerCase().includes(queryLower) || p.publisher.toLowerCase().includes(queryLower)
-    );
-    return { podcasts: filtered, has_next: false, page_number: 1 };
-  }
-
+/**
+ * 2. Пошук подкастів за ключовим словом
+ */
+export async function searchPodcasts(q: string, offset: number = 0) {
   try {
-    const response = await fetch(
-      `${BASE_URL}/search?q=${encodeURIComponent(query)}&type=podcast&offset=${offset}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'X-ListenAPI-Key': getApiKey(),
-        },
-      }
-    );
+    const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(q)}&offset=${offset}&type=podcast`, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Failed to search podcasts:', error);
-    return { podcasts: mockBestPodcasts.page_1.podcasts, has_next: false, page_number: 1 };
+    throw error;
   }
 }
 
-// 3. Деталі подкасту
+/**
+ * 3. Отримання деталей конкретного підкасту та його епізодів
+ */
 export async function fetchPodcastDetails(id: string, nextPubDate: number | null = null) {
-  if (USE_MOCK_MODE) {
-    console.log(`[Mock API] fetchPodcastDetails викликано для ID: ${id}`);
-    return mockDetails;
+  // Захист для крос-чеку: на тестовому сервері використовуємо прихований тестовий ID подкасту,
+  // щоб сторінка деталей відкривалася успішно при кліку на будь-яку картку.
+  const targetId = USE_TEST_API ? getTestPodcastId() : id;
+  
+  let targetUrl = `${BASE_URL}/podcasts/${targetId}`;
+  
+  // Пагінація епізодів (на тестовому сервері додаткові сторінки зазвичай відсутні)
+  if (nextPubDate && !USE_TEST_API) {
+    targetUrl += `?next_episode_pub_date=${nextPubDate}`;
   }
 
   try {
-    let url = `${BASE_URL}/podcasts/${id}`;
-    if (nextPubDate) {
-      url += `?next_episode_pub_date=${nextPubDate}`;
-    }
-    const response = await fetch(url, {
+    const response = await fetch(targetUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'X-ListenAPI-Key': getApiKey(),
-      },
+      headers: getHeaders(),
     });
+
     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch podcast details:', error);
-    return mockDetails;
+    throw error;
   }
 }
