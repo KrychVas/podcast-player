@@ -49,6 +49,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  display: flex;
+  align-items: center; 
+  justify-content: center; 
 }
 
 .app-header nav {
@@ -56,9 +59,9 @@ body {
   gap: 12px;
 }
 
-/* Оновлений клас для красивих кнопок навігації */
+/* Клас для красивих кнопок навігації */
 .spotify-nav-btn {
-  background-color: #242424; /* Темний бекграунд кнопки */
+  background-color: #242424;
   color: var(--text-main);
   border: none;
   padding: 10px 24px;
@@ -72,9 +75,10 @@ body {
   gap: 8px;
 }
 
+
 .spotify-nav-btn:hover {
   background-color: #333333;
-  color: var(--color-primary); /* При наведенні текст стає зеленим */
+  color: var(--color-primary); 
   transform: scale(1.04);
 }
 /* =========================================================================
@@ -125,6 +129,7 @@ body {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
+  line-clamp: 2; 
   display: -webkit-box;
   -webkit-line-clamp: 2; 
   -webkit-box-orient: vertical;
@@ -512,4 +517,163 @@ body {
   width: 100%;
   height: 36px;
   border-radius: 30px;
+}
+
+/* =========================================================================
+   7. АДАПТИВНИЙ ДИЗАЙН (MEDIA QUERIES) 
+   ========================================================================= */
+
+.search-wrapper {
+  width: 100%;
+  max-width: 400px;
+  margin: 20px 0;
+  box-sizing: border-box;
+}
+
+#search-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 24px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+#search-input:focus {
+  border-color: var(--color-primary);
+}
+
+
+/* --- 1. ПЛАНШЕТИ (ширина екрана до 992px) --- */
+@media (max-width: 992px) {
+  .podcast-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+  
+  .podcast-header {
+    gap: 20px;
+  }
+}
+
+
+/* --- 2. ЗВИЧАЙНІ МОБІЛЬНІ ТЕЛЕФОНИ (ширина екрана до 768px) --- */
+@media (max-width: 768px) {
+  #app {
+    padding: 20px 12px;
+  }
+
+  .app-header {
+    padding: 12px 16px;
+  }
+
+  .search-wrapper {
+    max-width: 100%;
+    padding: 0 4px;
+  }
+
+  .podcast-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .podcast-header-img {
+    width: 180px;
+    height: 180px;
+  }
+
+  .episode-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .episode-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .spotify-player-container {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .now-playing-info {
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .audio-wrapper {
+    width: 100%;
+  }
+  
+  .page-title {
+    font-size: 1.6rem;
+  }
+}
+
+
+/* --- 3. КОМПАКТНІ СМАРТФОНИ (iPhone SE тощо — ширина екрана до 400px) --- */
+@media (max-width: 400px) {
+  .podcast-grid {
+    grid-template-columns: 1fr; 
+    gap: 24px;
+    justify-items: center; 
+  }
+
+  .podcast-card {
+    width: 100%;
+    max-width: 260px; 
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-sizing: border-box;
+    overflow: hidden; 
+  }
+
+  .podcast-card img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    margin: 0 auto 12px auto;
+    display: block;
+    border-radius: 8px;
+  }
+  
+  
+  .podcast-card h3 {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    margin: 8px 0 4px 0;
+    white-space: nowrap;      
+    overflow: hidden;         
+    text-overflow: ellipsis;  
+    box-sizing: border-box;
+  }
+
+  
+  .podcast-card p {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    margin: 0;
+    white-space: nowrap;      
+    overflow: hidden;         
+    text-overflow: ellipsis;  
+    box-sizing: border-box;
+  }
 }
