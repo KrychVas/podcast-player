@@ -1,10 +1,11 @@
+// src/utils/player.ts
 import { saveEpisodeProgress, getEpisodeProgress } from './storage';
 
 export function playEpisode(audioUrl: string, episodeTitle: string) {
   const playerFooter = document.getElementById('global-player');
   if (!playerFooter) return;
 
-  // Чиста верстка плеєра з посиланням на класи стилів
+  // Модернізована структура плеєра в стилі преміум-додатку
   playerFooter.innerHTML = `
     <div class="spotify-player-container">
       <div class="now-playing-info">
@@ -19,6 +20,9 @@ export function playEpisode(audioUrl: string, episodeTitle: string) {
       </div>
     </div>
   `;
+
+  // Робимо плеєр видимим (якщо він був прихований)
+  playerFooter.style.display = 'block';
 
   const audio = document.getElementById('audio-element') as HTMLAudioElement;
   
@@ -36,8 +40,8 @@ export function playEpisode(audioUrl: string, episodeTitle: string) {
 
     const playPromise = audio.play() as any;
     if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch((err: any) => {
-        console.log("Autoplay prevented or playback error:", err);
+      playPromise.catch((error: any) => {
+        console.log("Autoplay blocked or playback error:", error);
       });
     }
   }
