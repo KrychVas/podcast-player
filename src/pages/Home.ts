@@ -1,84 +1,162 @@
-
 import { fetchBestPodcasts, searchPodcasts } from '../api/podcastApi';
+import { navigateTo } from '../router/router';
 
 let debounceTimeout: number;
+
+let currentBestPage = 1;
+let currentSearchOffset = 0;
+let currentQuery = '';
+let allPodcasts: any[] = [];
 
 export async function renderHome() {
   const appDiv = document.querySelector<HTMLDivElement>('#app');
   if (!appDiv) return;
 
-  // 1. Малюємо каркас сторінки з твоїми стилями + додаємо контейнер для карток
+  if (!currentQuery) {
+    currentBestPage = 1;
+    allPodcasts = [];
+  }
+
+  // Малюємо каркас сторінки через класи зі style.css
   appDiv.innerHTML = `
-    <div style="padding: 20px; max-width: 1200px; margin: 0 auto; font-family: sans-serif;">
-      <h2 style="font-size: 2rem; margin-bottom: 20px; color: #fff;">Discover Best Podcasts</h2>
+    <div class="page-container">
+      <h2 class="page-title">Discover Best Podcasts</h2>
       
-      <div style="margin: 20px 0;">
-        <input type="text" id="search-input" placeholder="Search podcasts..." 
-          style="padding: 12px 20px; width: 100%; max-width: 400px; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; font-size: 1rem; outline: none;" />
+      <div class="search-wrapper">
+        <input type="text" id="search-input" value="${currentQuery}" placeholder="What do you want to listen to?" />
       </div>
 
-      <!-- Індикатор завантаження (Вимога ТЗ: +5 балів) -->
-      <div id="podcasts-list">
-        <div class="loading" style="color: #646cff; font-size: 1.2rem;">Loading amazing podcasts...</div>
+      <div id="podcasts-grid" class="podcast-grid">
+        <div class="loading">Loading amazing podcasts...</div>
       </div>
+
+      <div id="pagination-container" class="pagination-wrapper"></div>
     </div>
   `;
 
-  const container = document.getElementById('podcasts-list');
+  const gridContainer = document.getElementById('podcasts-grid');
+  const paginationContainer = document.getElementById('pagination-container');
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
 
-  // 2. Функція побудови карток подкастів (Вимога ТЗ: картинка, назва, автор -> +5 балів)
-  function displayPodcasts(podcasts: any[]) {
-    if (!container) return;
-    if (!podcasts || podcasts.length === 0) {
-      container.innerHTML = `<p style="color: #666;">No podcasts found.</p>`;
+  function displayPodcasts(podcasts: any[], append = false) {
+    if (!gridContainer) return;
+
+    if (!append) {
+      allPodcasts = [...podcasts];
+    } else {
+      allPodcasts = [...allPodcasts, ...podcasts];
+    }
+
+    if (allPodcasts.length === 0) {
+      gridContainer.innerHTML = `<p class="no-results">No podcasts found.</p>`;
+      if (paginationContainer) paginationContainer.innerHTML = '';
       return;
     }
 
-    container.innerHTML = `
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
-        ${podcasts.map(podcast => `
-          <div class="podcast-card" data-id="${podcast.id}" 
-            style="background: #181818; padding: 15px; border-radius: 6px; cursor: pointer; transition: background 0.3s; border: 1px solid #222;"
-            onmouseenter="this.style.background='#282828'"
-            onmouseleave="this.style.background='#181818'">
-            <img src="${podcast.image || podcast.thumbnail}" alt="${podcast.title}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; margin-bottom: 10px;" />
-            <h4 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${podcast.title_original || podcast.title}</h4>
-            <p style="margin: 0; font-size: 0.8rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">By ${podcast.publisher_original || podcast.publisher || 'Unknown'}</p>
-          </div>
-        `).join('')}
+    // Рендеримо картки під Grid сітку
+    gridContainer.innerHTML = allPodcasts.map(podcast => `
+      <div class="podcast-card" data-id="${podcast.id}">
+        <img src="${podcast.image || podcast.thumbnail}" alt="${podcast.title}" loading="lazy" />
+        <h4>${podcast.title_original || podcast.title}</h4>
+        <p>By ${podcast.publisher_original || podcast.publisher || 'Unknown'}</p>
       </div>
+    `).join('');
+
+    const cards = gridContainer.querySelectorAll('.podcast-card');
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        const podcastId = card.getAttribute('data-id');
+        if (podcastId) {
+          navigateTo(`podcast/${podcastId}`); 
+        }
+      });
+    });
+  }
+
+  function renderLoadMoreButton(hasNextPage: boolean, loadMoreAction: () => void) {
+    if (!paginationContainer) return;
+
+    if (!hasNextPage) {
+      paginationContainer.innerHTML = '';
+      return;
+    }
+
+    paginationContainer.innerHTML = `
+      <button id="load-more-btn" class="spotify-btn">
+        Load More Podcasts
+      </button>
     `;
+
+    document.getElementById('load-more-btn')?.addEventListener('click', loadMoreAction);
   }
 
-  // 3. Завантажуємо найкращі подкасти при старті сторінки (Вимога ТЗ: +5 балів)
-  const defaultData = await fetchBestPodcasts();
-  if (defaultData && defaultData.podcasts) {
-    displayPodcasts(defaultData.podcasts);
+  if (!currentQuery) {
+    const data = await fetchBestPodcasts(currentBestPage);
+    if (data && data.podcasts) {
+      displayPodcasts(data.podcasts);
+      renderLoadMoreButton(data.has_next, async () => {
+        currentBestPage = data.next_page_number;
+        const nextData = await fetchBestPodcasts(currentBestPage);
+        if (nextData && nextData.podcasts) {
+          displayPodcasts(nextData.podcasts, true);
+          renderLoadMoreButton(nextData.has_next, loadMoreActionForBest(nextData));
+        }
+      });
+    } else {
+      if (gridContainer) gridContainer.innerHTML = `<p class="error-text">Failed to load podcasts.</p>`;
+    }
   } else {
-    if (container) container.innerHTML = `<p style="color: red;">Failed to load podcasts. Check your API key in .env.local</p>`;
+    const data = await searchPodcasts(currentQuery, currentSearchOffset);
+    if (data) {
+      displayPodcasts(data.results || []);
+      renderLoadMoreButton(data.next_offset !== undefined, () => loadMoreSearch(data));
+    }
   }
 
-  // 4. Логіка пошуку з усуненням брязкоту (Debounce) (Вимога ТЗ: +5 балів)
+  function loadMoreActionForBest(latestData: any) {
+    return async () => {
+      currentBestPage = latestData.next_page_number;
+      const nextData = await fetchBestPodcasts(currentBestPage);
+      if (nextData && nextData.podcasts) {
+        displayPodcasts(nextData.podcasts, true);
+        renderLoadMoreButton(nextData.has_next, loadMoreActionForBest(nextData));
+      }
+    };
+  }
+
+  async function loadMoreSearch(latestData: any) {
+    currentSearchOffset = latestData.next_offset;
+    const nextData = await searchPodcasts(currentQuery, currentSearchOffset);
+    if (nextData && nextData.results) {
+      displayPodcasts(nextData.results, true);
+      renderLoadMoreButton(nextData.next_offset !== undefined, () => loadMoreSearch(nextData));
+    }
+  }
+
   searchInput?.addEventListener('input', (e) => {
     const query = (e.target as HTMLInputElement).value.trim();
-    
-    if (container) {
-      container.innerHTML = `<div class="loading" style="color: #646cff; font-size: 1.2rem;">Searching...</div>`;
-    }
+    currentQuery = query;
+
+    if (gridContainer) gridContainer.innerHTML = `<div class="loading">Searching...</div>`;
+    if (paginationContainer) paginationContainer.innerHTML = '';
 
     clearTimeout(debounceTimeout);
 
-    // Затримка 500мс, щоб не спамити API (Вимога ТЗ: +5 балів за спостереження в Network)
     debounceTimeout = window.setTimeout(async () => {
-      if (query === '') {
-        // Поле порожнє -> показуємо найкращі (Вимога ТЗ: +5 балів)
-        const data = await fetchBestPodcasts();
-        if (data) displayPodcasts(data.podcasts);
+      if (currentQuery === '') {
+        currentBestPage = 1;
+        const data = await fetchBestPodcasts(currentBestPage);
+        if (data && data.podcasts) {
+          displayPodcasts(data.podcasts);
+          renderLoadMoreButton(data.has_next, loadMoreActionForBest(data));
+        }
       } else {
-        // Є текст -> викликаємо пошук (Вимога ТЗ: +5 балів)
-        const data = await searchPodcasts(query);
-        if (data) displayPodcasts(data.results || []);
+        currentSearchOffset = 0;
+        const data = await searchPodcasts(currentQuery, currentSearchOffset);
+        if (data && data.results) {
+          displayPodcasts(data.results);
+          renderLoadMoreButton(data.next_offset !== undefined, () => loadMoreSearch(data));
+        }
       }
     }, 500);
   });
